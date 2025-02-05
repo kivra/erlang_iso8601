@@ -23,7 +23,9 @@
 -define(MIDNIGHT, {0,0,0}).
 -define(V, proplists:get_value).
 
--type datetime() :: calendar:datetime().
+-type time_micro() :: {calendar:hour(), calendar:minute(), float()}.
+-type datetime_micro() :: {calendar:date(), time_micro()}.
+-type datetime() :: calendar:datetime() | datetime_micro().
 -type datetime_plist() :: list({atom(), integer()}).
 -type 'maybe'(A) :: undefined | A.
 -type timestamp() :: {MegaSecs::integer(),
