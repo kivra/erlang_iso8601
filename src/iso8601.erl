@@ -9,6 +9,7 @@
          format/1,
          format/2,
          parse/1,
+         parse_exact/1,
          parse_duration/1,
          apply_duration/2,
          parse_interval/1,
@@ -103,7 +104,20 @@ format({{Y,Mo,D}, {H,Mn,S}}, _Opts) ->
 parse(Bin) when is_binary(Bin) ->
     parse(binary_to_list(Bin));
 parse(Str) ->
-    year(Str, []).
+    {Datetime, SecondsDecimal} = year(Str, []),
+    %% Fractional seconds round to the nearest whole second (apply_offset
+    %% rounds), matching this function's historical behavior.
+    apply_offset(Datetime, 0, 0, SecondsDecimal).
+
+-spec parse_exact (string()|binary()) -> datetime_micro().
+%% @doc Like parse/1, but the seconds element of the result is a float
+%% carrying the fractional seconds instead of rounding them away.
+%% Same contract as parse_exact/1 in erlsci/iso8601.
+parse_exact(Bin) when is_binary(Bin) ->
+    parse_exact(binary_to_list(Bin));
+parse_exact(Str) ->
+    {{Date, {H, M, S}}, SecondsDecimal} = year(Str, []),
+    {Date, {H, M, S + SecondsDecimal}}.
 
 -spec gi(string()) ->integer().
 %doc get string and return integer part or 0 on error
@@ -291,8 +305,7 @@ acc_float(FloatStr, Rest, Key, Acc, NextF) ->
 add_decimal(Datetime, Plist) ->
     HDecimal = ?V(hour_decimal, Plist, 0.0),
     MDecimal = ?V(minute_decimal, Plist, 0.0),
-    SDecimal = ?V(second_decimal, Plist, 0.0),
-    apply_offset(Datetime, HDecimal, MDecimal, SDecimal).
+    apply_offset(Datetime, HDecimal, MDecimal, 0.0).
 
 datetime(Plist) ->
     {Date, WeekOffsetH} = make_date(Plist),
@@ -301,7 +314,8 @@ datetime(Plist) ->
     OffsetSign = ?V(offset_sign, Plist, 1),
     OffsetH = -1 * OffsetSign * ?V(offset_hour, Plist, 0),
     OffsetM = -1 * OffsetSign * ?V(offset_minute, Plist, 0),
-    apply_offset(Datetime, WeekOffsetH+OffsetH, OffsetM, 0).
+    {apply_offset(Datetime, WeekOffsetH+OffsetH, OffsetM, 0),
+     ?V(second_decimal, Plist, 0.0)}.
 
 datetime(_, Plist) ->
     datetime(Plist).

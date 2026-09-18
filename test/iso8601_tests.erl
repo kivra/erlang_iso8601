@@ -103,6 +103,35 @@ parse_fractional_second_test_() ->
      {"parses YYYY-MM-DDTHHMMSS,ss",
       ?_assertMatch({{2012,2,3},{4,5,7}}, F("2012-02-03T040506,50"))}].
 
+parse_exact_test_() ->
+    F = fun iso8601:parse_exact/1,
+    [{"keeps fractional seconds as a float",
+      ?_assertMatch({{2026,9,17},{12,34,56.75}}, F(<<"2026-09-17T12:34:56.75Z">>))},
+     {"keeps fractional seconds below one half",
+      ?_assertMatch({{2026,9,17},{12,34,56.25}}, F(<<"2026-09-17T12:34:56.25Z">>))},
+     {"accepts a comma decimal mark",
+      ?_assertMatch({{2026,9,17},{12,34,56.5}}, F(<<"2026-09-17T12:34:56,5Z">>))},
+     {"returns float seconds also without a fraction",
+      ?_assertMatch({{2026,9,17},{12,34,56.0}}, F(<<"2026-09-17T12:34:56Z">>))},
+     {"does not carry the fraction into the next second",
+      ?_assertMatch({{2026,9,17},{23,59,59.9}}, F(<<"2026-09-17T23:59:59.9Z">>))},
+     {"applies zone offsets",
+      ?_assertMatch({{2026,9,17},{12,34,56.001}}, F(<<"2026-09-17T14:34:56.001+02:00">>))},
+     {"parses week dates",
+      ?_assertMatch({{2026,9,17},{12,34,56.5}}, F(<<"2026-W38-4T12:34:56.5Z">>))},
+     {"folds fractional hours into whole time",
+      ?_assertMatch({{2026,9,17},{12,30,0.0}}, F(<<"2026-09-17T12.5Z">>))},
+     {"folds fractional minutes into whole time",
+      ?_assertMatch({{2026,9,17},{12,34,30.0}}, F(<<"2026-09-17T12:34.5Z">>))},
+     {"parses basic format",
+      ?_assertMatch({{2026,9,17},{12,34,56.75}}, F(<<"20260917T123456.75Z">>))},
+     {"parses date-only input",
+      ?_assertMatch({{2026,9,17},{0,0,0.0}}, F(<<"2026-09-17">>))},
+     {"accepts strings",
+      ?_assertMatch({{2026,9,17},{12,34,56.75}}, F("2026-09-17T12:34:56.75Z"))},
+     {"fails on garbage like parse/1 does",
+      ?_assertError(badarg, F(<<"not a date">>))}].
+
 parse_fractional_fail_test_() ->
     F = fun iso8601:parse/1,
     [{"fails to parses multiple decimals", % disallowed by spec

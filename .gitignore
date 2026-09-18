@@ -6,3 +6,5 @@ iso8601.d
 xrefr
 elvis
 *.beam
+_build/
+rebar.lock
