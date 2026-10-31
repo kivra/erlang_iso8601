@@ -352,7 +352,8 @@ date_at_w01_1(Year) ->
 %% @doc Add the specified number of hours, minutes and seconds to `Datetime'.
 %% Punts on sub-second precision for now by rounding the total of the number of
 %% seconds in the offset before adding.
-apply_offset(Datetime, H, M, S) ->
+apply_offset(Datetime = {Date, _}, H, M, S) ->
+    true = calendar:valid_date(Date),
     OffsetS = S + (60 * (M + (60 * H))),
     Gs = round(OffsetS) + calendar:datetime_to_gregorian_seconds(Datetime),
     calendar:gregorian_seconds_to_datetime(Gs).
